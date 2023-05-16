@@ -1,3 +1,5 @@
+/* eslint-disable react/jsx-one-expression-per-line */
+/* eslint-disable no-nested-ternary */
 import { Link } from 'react-router-dom';
 import {
   useCallback, useEffect, useMemo, useState,
@@ -6,6 +8,7 @@ import {
   Container, Header, ListHeader, Card,
   InputSearchContainer,
   ErroContainer,
+  EmptyList,
 } from './style';
 
 import Button from '../../components/Button';
@@ -14,6 +17,7 @@ import arrow from '../../assets/images/icons/arrow.svg';
 import edit from '../../assets/images/icons/edit.svg';
 import trash from '../../assets/images/icons/trash.svg';
 import sad from '../../assets/images/icons/sad.svg';
+import emptybox from '../../assets/images/icons/emptybox.svg';
 
 import Loader from '../../components/Loader';
 
@@ -34,17 +38,13 @@ export default function Home() {
     try {
       setIsLoading(true);
 
-      const contactsList = await ContactsService.listContacts(orderBy);
+      // const contactsList = await ContactsService.listContacts(orderBy);
+      const contactsList = []; await ContactsService.listContacts(orderBy);
 
       setHasError(false);
       setContacts(contactsList);
     } catch (error) {
       setHasError(true);
-      // console.log('Name:', error.name);
-      // console.log('Message:', error.message);
-      // console.log('Response:', error.response);
-      // console.log('body:', error.body);
-      // console.log(error);
     } finally {
       setIsLoading(false);
     }
@@ -52,21 +52,6 @@ export default function Home() {
 
   useEffect(() => {
     loadContacts();
-
-    // Forma de encadeamento, sem async await
-    // fetch(`http://localhost:3001/contacts?order=${orderBy}`)
-    //   .then(async (response) => {
-    //     await delay(2000);
-
-    //     const json = await response.json();
-    //     setContacts(json);
-    //   })
-    //   .catch((error) => {
-    //     console.log('erro', error);
-    //   })
-    //   .finally(() => {
-    //     setIsLoading(false);
-    //   });
   }, [loadContacts]);
 
   function handleToggleOrderBy() {
@@ -86,16 +71,27 @@ export default function Home() {
   return (
     <Container>
       <Loader isLoading={isLoading} />
-      <InputSearchContainer>
-        <input
-          value={searchTerm}
-          type="text"
-          placeholder="Pesquise pelo nome..."
-          onChange={handleChangeSearchTerm}
-        />
-      </InputSearchContainer>
-      <Header hasError={hasError}>
-        {!hasError && (
+      {contacts.length > 0 && (
+        <InputSearchContainer>
+          <input
+            value={searchTerm}
+            type="text"
+            placeholder="Pesquise pelo nome..."
+            onChange={handleChangeSearchTerm}
+          />
+        </InputSearchContainer>
+      )}
+      <Header justifyContent={
+          hasError
+            ? 'flex-end'
+            : (
+              contacts.length > 0
+                ? 'space-between'
+                : 'center'
+            )
+          }
+      >
+        {!hasError && contacts.length > 0 && (
           <strong>
             {filteredContacts.length}
             {filteredContacts.length === 1 ? ' contato' : ' contatos'}
@@ -127,6 +123,15 @@ export default function Home() {
 
       {!hasError && (
         <>
+          {contacts.length < 1 && !isLoading && (
+            <EmptyList>
+              <img src={emptybox} alt="Empty Box" />
+              <p>
+                Você ainda não tem nenhum contato cadastrado!
+                Clique no botão <strong>Novo contato</strong> à cima para cadastrar o seu primeiro!
+              </p>
+            </EmptyList>
+          )}
           {filteredContacts.map((contact) => (
             <Card key={contact.id}>
               <div className="info">
