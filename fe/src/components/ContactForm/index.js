@@ -1,20 +1,37 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import PropTypes from 'prop-types';
 import FormGroup from '../FormGroup';
 import { Form, ButtonContainer } from './style';
 import Input from '../Input';
 import Select from '../Select';
-import Button from '../Button';
 import isEmailValid from '../../utils/isEmailValid';
 import formatPhone from '../../utils/formatPhone';
 
 import useErrors from '../../hooks/useErrors';
+import CategoriesService from '../../services/CategoriesService';
+import Button from '../Button';
 
-export default function ContactForm({ labelButton }) {
+export default function ContactForm({ labelButton, onSubmit }) {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
   const [category, setCategory] = useState('');
+  const [categories, setCategories] = useState([]);
+  const [isLoadingCategories, setIsLoadingCategories] = useState(true);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  useEffect(() => {
+    async function loadCategories() {
+      try {
+        const response = await CategoriesService.listCategories();
+        setCategories(response);
+      } catch {} finally {
+        setIsLoadingCategories(false);
+      }
+    }
+
+    loadCategories();
+  }, []);
 
   const {
     setError, removeError, getErrorMessageByField, errors,
@@ -45,14 +62,27 @@ export default function ContactForm({ labelButton }) {
     setPhone(formatPhone(event.target.value));
   }
 
+  async function handleSubmit(event) {
+    event.preventDefault();
+
+    setIsSubmitting(true);
+
+    await onSubmit({
+      name, email, phone, category,
+    });
+
+    setIsSubmitting(false);
+  }
+
   return (
-    <Form noValidate>
+    <Form onSubmit={handleSubmit} noValidate>
       <FormGroup error={getErrorMessageByField('name')}>
         <Input
           placeholder="Nome"
           value={name}
           onChange={handleNameChange}
           error={getErrorMessageByField('name')}
+          disabled={isSubmitting}
         />
       </FormGroup>
 
@@ -63,6 +93,7 @@ export default function ContactForm({ labelButton }) {
           onChange={handleEmailChange}
           value={email}
           error={getErrorMessageByField('email')}
+          disabled={isSubmitting}
         />
       </FormGroup>
 
@@ -72,22 +103,30 @@ export default function ContactForm({ labelButton }) {
           onChange={handlePhoneChange}
           value={phone}
           maxLength="15"
+          disabled={isSubmitting}
         />
       </FormGroup>
 
-      <FormGroup>
+      <FormGroup isLoading={isLoadingCategories}>
         <Select
           placeholder="Categoria"
           onChange={(event) => setCategory(event.target.value)}
           value={category}
+          disabled={isLoadingCategories || isSubmitting}
         >
-          <option value=""> ---- </option>
-          <option value="instagram">Intagram</option>
+          <option value=""> -- Categorias -- </option>
+          {categories.map((item) => (
+            <option key={item.id} value={item.id}>{item.name}</option>
+          ))}
         </Select>
       </FormGroup>
 
       <ButtonContainer>
-        <Button type="submit" disabled={!isFormValid}>
+        <Button
+          type="submit"
+          disabled={!isFormValid}
+          isLoading={isSubmitting}
+        >
           { labelButton }
         </Button>
       </ButtonContainer>
@@ -97,4 +136,5 @@ export default function ContactForm({ labelButton }) {
 
 ContactForm.propTypes = {
   labelButton: PropTypes.string.isRequired,
+  onSubmit: PropTypes.func.isRequired,
 };

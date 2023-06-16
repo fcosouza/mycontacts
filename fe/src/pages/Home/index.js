@@ -8,7 +8,8 @@ import {
   Container, Header, ListHeader, Card,
   InputSearchContainer,
   ErroContainer,
-  EmptyList,
+  EmptyListContainer,
+  SearchNotFoundContainer,
 } from './style';
 
 import Button from '../../components/Button';
@@ -18,6 +19,7 @@ import edit from '../../assets/images/icons/edit.svg';
 import trash from '../../assets/images/icons/trash.svg';
 import sad from '../../assets/images/icons/sad.svg';
 import emptybox from '../../assets/images/icons/emptybox.svg';
+import magnifierquestion from '../../assets/images/icons/magnifierquestion.svg';
 
 import Loader from '../../components/Loader';
 
@@ -38,8 +40,7 @@ export default function Home() {
     try {
       setIsLoading(true);
 
-      // const contactsList = await ContactsService.listContacts(orderBy);
-      const contactsList = []; await ContactsService.listContacts(orderBy);
+      const contactsList = await ContactsService.listContacts(orderBy);
 
       setHasError(false);
       setContacts(contactsList);
@@ -112,6 +113,14 @@ export default function Home() {
         </ErroContainer>
       )}
 
+      {contacts.length > 0 && filteredContacts.length < 1 && (
+        <SearchNotFoundContainer>
+          <img src={magnifierquestion} alt="Magnifier Question" />
+
+          <span>Nenhum resultado foi encontrado para <strong>{searchTerm}</strong>.</span>
+        </SearchNotFoundContainer>
+      )}
+
       {filteredContacts.length > 0 && (
       <ListHeader orderBy={orderBy}>
         <button type="button" onClick={handleToggleOrderBy}>
@@ -124,13 +133,13 @@ export default function Home() {
       {!hasError && (
         <>
           {contacts.length < 1 && !isLoading && (
-            <EmptyList>
+            <EmptyListContainer>
               <img src={emptybox} alt="Empty Box" />
               <p>
                 Você ainda não tem nenhum contato cadastrado!
                 Clique no botão <strong>Novo contato</strong> à cima para cadastrar o seu primeiro!
               </p>
-            </EmptyList>
+            </EmptyListContainer>
           )}
           {filteredContacts.map((contact) => (
             <Card key={contact.id}>
